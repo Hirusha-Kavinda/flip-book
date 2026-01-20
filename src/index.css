@@ -15,3 +15,43 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Fancybox Custom Styles */
+.fancybox__backdrop {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(4px);
+}
+
+.fancybox__image {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+}
+
+.fancybox__toolbar {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(8px);
+}
+
+.fancybox__button {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(8px);
+}
+
+.fancybox__button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.fancybox__nav {
+  --fancybox-nav-color: rgba(255, 255, 255, 0.9);
+}
+
+.fancybox__nav-button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(8px);
+}
+
+.fancybox__nav-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}

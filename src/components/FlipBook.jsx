@@ -1,20 +1,21 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
+import { Fancybox } from "@fancyapps/ui";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
 
 const FlipBook = () => {
   const [loadedCount, setLoadedCount] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
   const loadedImagesRef = useRef(new Set());
   const flipBookRef = useRef(null);
+  const fancyboxContainerRef = useRef(null);
 
-  // Generate image paths for all 23 pages
+  // Generate image paths for all 40 pages
+  //const baseUrl = "https://hirusha.iio.to/catelog2";
   const baseUrl = "https://hirusha.iio.to/catelog2";
-  const images = Array.from({ length: 40 }, (_, i) => `${baseUrl}/images/${i + 1}.jpg`);
-
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
-  
-  // Filter images: remove first page on mobile
-  const displayImages = isMobile ? images.slice(1) : images;
+  const images = Array.from({ length: 38 }, (_, i) => `${baseUrl}/images/${i + 1}.jpg`);
+  const displayImages = images;
 
   const handleImageLoad = useCallback((index) => {
     if (!loadedImagesRef.current.has(index)) {
@@ -23,12 +24,12 @@ const FlipBook = () => {
       console.log(`Image ${index + 1} loaded (${loadedImagesRef.current.size}/${images.length})`);
       
       // Mark as ready when at least 3 images are loaded
-      const requiredImages = isMobile ? Math.min(3, displayImages.length) : 3;
+      const requiredImages = Math.min(3, displayImages.length);
       if (loadedImagesRef.current.size >= requiredImages) {
         setIsReady(true);
       }
     }
-  }, [images.length, isMobile, displayImages.length]);
+  }, [images.length, displayImages.length]);
 
   const handleImageError = useCallback((index) => {
     console.error(`Failed to load image ${index + 1}`);
@@ -47,19 +48,57 @@ const FlipBook = () => {
     }
   };
 
+  const onFlip = useCallback((e) => {
+    setCurrentPage(e.data);
+  }, []);
+
+  // Initialize Fancybox when component is ready
+  useEffect(() => {
+    if (isReady && fancyboxContainerRef.current) {
+      Fancybox.bind(fancyboxContainerRef.current, "[data-fancybox='gallery']", {
+        Thumbs: {
+          autoStart: false,
+        },
+        Toolbar: {
+          display: {
+            left: ["infobar"],
+            middle: [],
+            right: ["slideshow", "download", "thumbs", "close"],
+          },
+        },
+        Carousel: {
+          infinite: true,
+        },
+      });
+
+      return () => {
+        Fancybox.unbind(fancyboxContainerRef.current);
+        Fancybox.close();
+      };
+    }
+  }, [isReady]);
+
+  // Handle center area click - prevent page flip when clicking center
+  const handleCenterClick = useCallback((e) => {
+    // Stop event propagation to prevent page flip
+    e.stopPropagation();
+    // Allow Fancybox to handle the click via data-fancybox attribute
+  }, []);
+
   // Calculate dimensions based on container
   const getBookDimensions = () => {
     const containerWidth = window.innerWidth;
     const containerHeight = window.innerHeight;
-    const padding = isMobile ? 20 : 80;
+    const padding = containerWidth < 1200 ? 40 : 80;
     const availableWidth = containerWidth - padding;
     const availableHeight = containerHeight - padding;
 
     // 4:3 aspect ratio
     const aspectRatio = 3 / 4; // height/width
     
-    // For desktop: show 2 pages side by side, so width per page = total width / 2
-    // For mobile: show 1 page, so width per page = total width
+    // For screens under 1200px, use full width for single page
+    // For larger screens, use half width for double page spread
+    const isMobile = containerWidth < 1200;
     const widthPerPage = isMobile ? availableWidth : availableWidth / 2;
     
     // Calculate height based on 4:3 ratio
@@ -74,7 +113,8 @@ const FlipBook = () => {
     
     return {
       width: Math.round(pageWidth),
-      height: Math.round(pageHeight)
+      height: Math.round(pageHeight),
+      isMobile
     };
   };
 
@@ -90,7 +130,7 @@ const FlipBook = () => {
   }, []);
 
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 flex items-center justify-center overflow-hidden">
+    <div className="w-full h-screen flex items-center justify-center overflow-hidden">
       {/* Loading overlay */}
       {!isReady && (
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
@@ -107,7 +147,7 @@ const FlipBook = () => {
         <>
           <button
             onClick={flipPrev}
-            className="fixed left-4 top-1/2 -translate-y-1/2 z-50 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all shadow-lg backdrop-blur-sm"
+            className="fixed left-4 top-1/2 -translate-y-1/2 z-50 bg-teal-500/20 hover:bg-teal-600/20 text-white p-3 md:p-4 rounded-full transition-all shadow-lg backdrop-blur-sm"
             aria-label="Previous page"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +156,7 @@ const FlipBook = () => {
           </button>
           <button
             onClick={flipNext}
-            className="fixed right-4 top-1/2 -translate-y-1/2 z-50 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all shadow-lg backdrop-blur-sm"
+            className="fixed right-4 top-1/2 -translate-y-1/2 z-50 bg-teal-500/20 hover:bg-teal-600/20 text-white p-3 md:p-4 rounded-full transition-all shadow-lg backdrop-blur-sm"
             aria-label="Next page"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,45 +167,95 @@ const FlipBook = () => {
       )}
 
       {/* Flipbook container */}
-      <div className="relative w-full h-full flex items-center justify-center p-2 md:p-4 z-10">
+      <div 
+        ref={fancyboxContainerRef}
+        className="relative w-full h-full flex items-center justify-center p-2 md:p-4 z-10"
+      >
         {isReady && (
-          <HTMLFlipBook
-            ref={flipBookRef}
-            width={dimensions.width}
-            height={dimensions.height}
-            minWidth={200}
-            maxWidth={2000}
-            minHeight={150}
-            maxHeight={2000}
-            maxShadowOpacity={0.5}
-            showCover={false}
-            mobileScrollSupport={true}
-            className="flipbook"
-            style={{
-              margin: '0 auto'
-            }}
-          >
-            {displayImages.map((src, index) => {
-              // Map display index back to original index for loading tracking
-              const originalIndex = isMobile ? index + 1 : index;
-              return (
-                <div key={index} className="page bg-white">
-                  <img
-                    src={src}
-                    alt={`Page ${originalIndex + 1}`}
-                    onLoad={() => handleImageLoad(originalIndex)}
-                    onError={(e) => handleImageError(originalIndex)}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      display: 'block'
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </HTMLFlipBook>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: currentPage === 0 ? 'center' : 'flex-start', 
+            alignItems: 'center',
+            width: '100%',
+            height: '100%',
+            transition: 'justify-content 0.8s ease-in-out'
+          }}>
+            <HTMLFlipBook
+              ref={flipBookRef}
+              width={dimensions.width}
+              height={dimensions.height}
+              minWidth={200}
+              maxWidth={2000}
+              minHeight={150}
+              maxHeight={2000}
+              maxShadowOpacity={0.5}
+              showCover={true}
+              mobileScrollSupport={true}
+              flippingTime={800}
+              usePortrait={dimensions.isMobile}
+              startPage={0}
+              drawShadow={true}
+              onFlip={onFlip}
+              className="flipbook"
+              style={{
+                margin: '0 auto'
+              }}
+            >
+              {displayImages.map((src, index) => {
+                return (
+                  <div key={index} className="page bg-white" style={{ position: 'relative' }}>
+                    <img
+                      src={src}
+                      alt={`Page ${index + 1}`}
+                      onLoad={() => handleImageLoad(index)}
+                      onError={(e) => handleImageError(index)}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        display: 'block',
+                        pointerEvents: 'none'
+                      }}
+                    />
+                    {/* Center clickable area for Fancybox */}
+                    <a
+                      data-fancybox="gallery"
+                      href={src}
+                      data-caption={`Page ${index + 1} of ${displayImages.length}`}
+                      onClick={handleCenterClick}
+                      className="center-clickable-area"
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '50%',
+                        height: '50%',
+                        cursor: 'zoom-in',
+                        zIndex: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      {/* Optional: Visual indicator (can be removed if not needed) */}
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '50%',
+                          transition: 'background-color 0.2s ease',
+                          pointerEvents: 'none'
+                        }}
+                        className="center-hover-indicator"
+                      />
+                    </a>
+                  </div>
+                );
+              })}
+            </HTMLFlipBook>
+          </div>
         )}
 
         {/* Preload images */}
