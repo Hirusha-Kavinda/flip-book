@@ -14,7 +14,7 @@ const FlipBook = () => {
   // Generate image paths for all 40 pages
   //const baseUrl = "https://hirusha.iio.to/catelog2";
   const baseUrl = "https://hirusha.iio.to/catelog2";
-  const images = Array.from({ length: 38 }, (_, i) => `${baseUrl}/images/${i + 1}.jpg`);
+  const images = Array.from({ length: 39 }, (_, i) => `${baseUrl}/images/${i + 1}.jpg`);
   const displayImages = images;
 
   const handleImageLoad = useCallback((index) => {
